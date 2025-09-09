@@ -36,7 +36,7 @@ jobs:
             - name: Docker Build and Push
               run: |
                    ls -A
-                   cd ./configs/docker
+                   cd ${{ github.workspace }}/config/docker
                    pwd
                    #docker build -t custom-gha-runner:${{ github.run_id }}
  
