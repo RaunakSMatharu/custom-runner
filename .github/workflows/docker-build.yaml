@@ -1,0 +1,43 @@
+name: Build GitHub Runner
+run-name:  ${{ inputs.environment }}-github-runner
+ 
+on:
+  workflow_dispatch:
+     inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'pe'
+        type: choice
+        options: [dev, qa, pe, uat, prd]
+       
+env:
+    ACR_NAME: "azuscsdtprdevacr01"
+ 
+jobs:
+    Fetching-latest-Versions:
+        runs-on: ubuntu-latest
+ 
+        steps:
+            - name: checkout code
+              uses: actions/checkout@v4
+           
+            - name: Set up Docker
+              uses: docker/setup-buildx-action@v3
+     
+            - name: Fetching the latest versions for Docker
+              shell: bash
+              run: |
+                    RUNNER_VERSION="$(curl -s https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name')"
+                    RUNNER_CONTAINER_HOOKS_VERSION="$(curl -fsSL https://api.github.com/repos/actions/runner-container-hooks/releases/latest | jq -r .tag_name | tr -d 'v')"
+                    BUILDX_VERSION="$(curl -fsSL https://api.github.com/repos/docker/buildx/releases/latest | jq -r .tag_name | tr -d 'v')"
+                    DOCKER_VERSION="$(curl -fsSL https://api.github.com/repos/moby/moby/releases/latest | jq -r .tag_name | tr -d 'v')"
+ 
+            - name: Docker Build and Push
+              run: |
+                   cd ${{ github.workspace }}/configs/docker
+ 
+                   docker build -t custom-gha-runner:${{ github.run_id }}
+ 
+                   #IMAGE_TAG="$ACR_NAME.azurecr.io/custom-gha-runner:${{ github.run_id }}"
+                   #docker push "$IMAGE_TAG"
