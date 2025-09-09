@@ -36,7 +36,8 @@ jobs:
             - name: Docker Build and Push
               run: |
                    ls -A
- 
+                   cd ./configs/docker
+                   pwd
                    #docker build -t custom-gha-runner:${{ github.run_id }}
  
                    #IMAGE_TAG="$ACR_NAME.azurecr.io/custom-gha-runner:${{ github.run_id }}"
