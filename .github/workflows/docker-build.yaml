@@ -35,10 +35,14 @@ jobs:
  
             - name: Docker Build and Push
               run: |
-                   ls -A
                    cd ${{ github.workspace }}/config/docker
-                   pwd
-                   #docker build -t custom-gha-runner:${{ github.run_id }}
+                  
+                   docker build \
+                        --build-arg RUNNER_VERSION = $RUNNER_VERSION \
+                        --build-arg RUNNER_CONTAINER_HOOKS_VERSION = $RUNNER_CONTAINER_HOOKS_VERSION \
+                        --build-arg BUILDX_VERSION = $BUILDX_VERSION \
+                        --build-arg DOCKER_VERSION = $DOCKER_VERSION \
+                        -t custom-gha-runner:${{ github.run_id }} .
  
                    #IMAGE_TAG="$ACR_NAME.azurecr.io/custom-gha-runner:${{ github.run_id }}"
                    #docker push "$IMAGE_TAG"
