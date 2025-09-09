@@ -1,48 +1,84 @@
 name: Build GitHub Runner
 run-name:  ${{ inputs.environment }}-github-runner
- 
+
 on:
   workflow_dispatch:
-     inputs:
+    inputs:
       environment:
         description: 'Environment to deploy to'
         required: true
         default: 'pe'
         type: choice
         options: [dev, qa, pe, uat, prd]
-       
+
 env:
-    ACR_NAME: "azuscsdtprdevacr01"
- 
+  ACR_NAME: azuscsdtprdevacr01
+
 jobs:
-    Fetching-latest-Versions:
-        runs-on: ubuntu-latest
- 
-        steps:
-            - name: checkout code
-              uses: actions/checkout@v4
-           
-            - name: Set up Docker
-              uses: docker/setup-buildx-action@v3
-     
-            - name: Fetching the latest versions for Docker
-              shell: bash
-              run: |
-                    RUNNER_VERSION="$(curl -s https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name')"
-                    RUNNER_CONTAINER_HOOKS_VERSION="$(curl -fsSL https://api.github.com/repos/actions/runner-container-hooks/releases/latest | jq -r .tag_name | tr -d 'v')"
-                    BUILDX_VERSION="$(curl -fsSL https://api.github.com/repos/docker/buildx/releases/latest | jq -r .tag_name | tr -d 'v')"
-                    DOCKER_VERSION="$(curl -fsSL https://api.github.com/repos/moby/moby/releases/latest | jq -r .tag_name | tr -d 'v')"
- 
-            - name: Docker Build and Push
-              run: |
-                   cd ${{ github.workspace }}/config/docker
-                  
-                   docker build \
-                        --build-arg RUNNER_VERSION=$RUNNER_VERSION \
-                        --build-arg RUNNER_CONTAINER_HOOKS_VERSION=$RUNNER_CONTAINER_HOOKS_VERSION \
-                        --build-arg BUILDX_VERSION=$BUILDX_VERSION \
-                        --build-arg DOCKER_VERSION=$DOCKER_VERSION \
-                        -t custom-gha-runner:${{ github.run_id }} .
- 
-                   #IMAGE_TAG="$ACR_NAME.azurecr.io/custom-gha-runner:${{ github.run_id }}"
-                   #docker push "$IMAGE_TAG"
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Fetch latest versions and EXPORT them for later steps
+      - name: Fetch latest component versions
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNNER_VERSION="$(curl -fsSL https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | tr -d 'v')"
+          RUNNER_CONTAINER_HOOKS_VERSION="$(curl -fsSL https://api.github.com/repos/actions/runner-container-hooks/releases/latest | jq -r .tag_name | tr -d 'v')"
+          BUILDX_VERSION="$(curl -fsSL https://api.github.com/repos/docker/buildx/releases/latest | jq -r .tag_name | tr -d 'v')"
+          DOCKER_VERSION="$(curl -fsSL https://api.github.com/repos/moby/moby/releases/latest | jq -r .tag_name | tr -d 'v')"
+
+          echo "RUNNER_VERSION=$RUNNER_VERSION" | tee -a "$GITHUB_ENV"
+          echo "RUNNER_CONTAINER_HOOKS_VERSION=$RUNNER_CONTAINER_HOOKS_VERSION" | tee -a "$GITHUB_ENV"
+          echo "BUILDX_VERSION=$BUILDX_VERSION" | tee -a "$GITHUB_ENV"
+          echo "DOCKER_VERSION=$DOCKER_VERSION" | tee -a "$GITHUB_ENV"
+
+          echo "runner_version=$RUNNER_VERSION" >> "$GITHUB_OUTPUT"
+          echo "hooks_version=$RUNNER_CONTAINER_HOOKS_VERSION" >> "$GITHUB_OUTPUT"
+          echo "buildx_version=$BUILDX_VERSION" >> "$GITHUB_OUTPUT"
+          echo "docker_version=$DOCKER_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        working-directory: ${{ github.workspace }}/config/docker
+        run: |
+          set -euo pipefail
+          echo "Using versions:"
+          echo "  RUNNER_VERSION=$RUNNER_VERSION"
+          echo "  RUNNER_CONTAINER_HOOKS_VERSION=$RUNNER_CONTAINER_HOOKS_VERSION"
+          echo "  BUILDX_VERSION=$BUILDX_VERSION"
+          echo "  DOCKER_VERSION=$DOCKER_VERSION"
+
+          docker build \
+            --build-arg RUNNER_VERSION="$RUNNER_VERSION" \
+            --build-arg RUNNER_CONTAINER_HOOKS_VERSION="$RUNNER_CONTAINER_HOOKS_VERSION" \
+            --build-arg BUILDX_VERSION="$BUILDX_VERSION" \
+            --build-arg DOCKER_VERSION="$DOCKER_VERSION" \
+            -t custom-gha-runner:${{ github.run_id }} .
+
+      # (Optional) Login & push to ACR
+      # - name: Azure login (OIDC)
+      #   uses: azure/login@v2
+      #   with:
+      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      #
+      # - name: ACR login
+      #   run: az acr login --name "$ACR_NAME"
+      #
+      # - name: Push to ACR
+      #   run: |
+      #     REGISTRY="${ACR_NAME}.azurecr.io"
+      #     SRC="custom-gha-runner:${{ github.run_id }}"
+      #     DST="${REGISTRY}/custom-gha-runner:${{ github.run_id }}"
+      #     docker tag "$SRC" "$DST"
+      #     docker push "$DST"
+
