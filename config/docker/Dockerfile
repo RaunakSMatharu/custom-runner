@@ -3,17 +3,17 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-jammy AS build
  
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
-ARG RUNNER_VERSION=2.328.0
-ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
-ARG DOCKER_VERSION=28.2.1
-ARG BUILDX_VERSION=0.24.0
+ARG RUNNER_VERSION
+ARG RUNNER_CONTAINER_HOOKS_VERSION
+ARG DOCKER_VERSION
+ARG BUILDX_VERSION
  
 RUN apt update -y && apt install curl unzip -y
  
 WORKDIR /actions-runner
 RUN export RUNNER_ARCH=${TARGETARCH} \
     && if [ "$RUNNER_ARCH" = "amd64" ]; then export RUNNER_ARCH=x64 ; fi \
-    && curl -f -L -o runner.tar.gz https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-${TARGETOS}-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
+    && curl -f -L -o runner.tar.gz https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-${TARGETOS}-${RUNNER_ARCH}-${RUNNER_VERSION/v/}.tar.gz \
     && tar xzf ./runner.tar.gz \
     && rm runner.tar.gz
  
