@@ -11,9 +11,6 @@ on:
         type: choice
         options: [dev, qa, pe, uat, prd]
 
-env:
-  ACR_NAME: azuscsdtprdevacr01
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,10 +27,16 @@ jobs:
         id: versions
         shell: bash
         run: |
-          set -euo pipefail
+          echo "RUNNER_VERSION"
           RUNNER_VERSION="$(curl -fsSL https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | tr -d 'v')"
+          
+          echo "RUNNER_CONTAINER_HOOKS_VERSION"
           RUNNER_CONTAINER_HOOKS_VERSION="$(curl -fsSL https://api.github.com/repos/actions/runner-container-hooks/releases/latest | jq -r .tag_name | tr -d 'v')"
+          
+          echo "BUILDX_VERSION"
           BUILDX_VERSION="$(curl -fsSL https://api.github.com/repos/docker/buildx/releases/latest | jq -r .tag_name | tr -d 'v')"
+          
+          echo "DOCKER_VERSION"
           DOCKER_VERSION="$(curl -fsSL https://api.github.com/repos/moby/moby/releases/latest | jq -r .tag_name | tr -d 'v')"
 
           echo "RUNNER_VERSION=$RUNNER_VERSION" | tee -a "$GITHUB_ENV"
