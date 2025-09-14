@@ -1,0 +1,11 @@
+name: Demo on dev runners
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: dev
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          echo "Hello from custom image!"
+          echo "self hosted runners are running from aks"
