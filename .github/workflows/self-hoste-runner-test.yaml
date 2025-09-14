@@ -9,3 +9,7 @@ jobs:
       - run: |
           echo "Hello from custom image!"
           echo "self hosted runners are running from aks"
+
+          sleep 600
+
+          echo "self hosted runners are running from aks"
