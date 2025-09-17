@@ -1,0 +1,20 @@
+name: Multi-Env Pipeline
+
+on:
+  workflow_dispatch:   # or push, schedule, etc.
+
+jobs:
+  deploy:
+    name: Deploy to ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [DEV, SBX, INT, PROD]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to ${{ matrix.environment }}
+        run: |
+          echo "Deploying to ${{ matrix.environment }}"
+          # Example: ./deploy.sh --env ${{ matrix.environment }}
